@@ -1,22 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import AppMenu from './Components/AppMenu';
 import RequirementsMessage from './Components/RequirementsMessage';
 
 import WebApp from '@twa-dev/sdk';
 import { detectCodeType } from './utils/helper';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
 
 const App: React.FC = () => {
   const [isTelegramClient, setIsTelegramClient] = useState(false);
@@ -139,8 +127,6 @@ const App: React.FC = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
       <div id="main">
         <AppMenu
           onShowQrScanner={() => showQrScanner()}
@@ -153,7 +139,6 @@ const App: React.FC = () => {
         />
         {/* Render other components based on state */}
       </div>
-    </ThemeProvider>
   );
 };
 

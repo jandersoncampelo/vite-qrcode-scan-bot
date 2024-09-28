@@ -1,5 +1,5 @@
 import React from "react";
-import { AppBar, Toolbar, IconButton, Button, Box } from "@mui/material";
+import { AppBar, Toolbar, Button, Box } from "@mui/material";
 import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
 import HistoryIcon from "@mui/icons-material/History";
 
@@ -16,15 +16,13 @@ const AppMenu: React.FC<AppMenuProps> = ({
     <AppBar position="static" color="primary">
       <Toolbar>
         <Box sx={{ flexGrow: 1 }} />
-        <IconButton color="inherit" onClick={onShowQrScanner}>
-          <QrCodeScannerIcon />
-          <Button color="inherit">Scan</Button>
-        </IconButton>
+        <Button startIcon={<QrCodeScannerIcon />} color="inherit" onClick={onShowQrScanner}>
+          Scan
+        </Button>
         <Box sx={{ flexGrow: 1 }} />
-        <IconButton color="inherit" onClick={onShowHistory}>
-          <HistoryIcon />
-          <Button color="inherit">History</Button>
-        </IconButton>
+        <Button startIcon={<HistoryIcon />} color="inherit" onClick={onShowHistory}>
+        History
+        </Button>
         <Box sx={{ flexGrow: 1 }} />
       </Toolbar>
     </AppBar>
