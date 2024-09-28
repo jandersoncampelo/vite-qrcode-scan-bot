@@ -1,5 +1,6 @@
 import React from 'react';
-import ButtonDelete from '../ButtonDelete'
+import ButtonDelete from '../ButtonDelete';
+import { Card, CardContent, CardActions, Box, Typography } from '@mui/material';
 
 interface CardTextProps {
   atext: string;
@@ -8,15 +9,15 @@ interface CardTextProps {
 
 const CardText: React.FC<CardTextProps> = ({ atext, onRemoveKey }) => {
   return (
-    <div className="v-card mx-auto" style={{ maxWidth: '600px', variant: 'flat' }}>
-      <div className="v-card-item">
-        <div>{atext}</div>
-      </div>
-      <div className="v-card-actions">
-        <div className="v-spacer" />
+    <Card sx={{ maxWidth: 600, mx: 'auto', variant: 'outlined' }}>
+      <CardContent>
+        <Typography variant="body1">{atext}</Typography>
+      </CardContent>
+      <CardActions>
+        <Box sx={{ flexGrow: 1 }} />
         <ButtonDelete onRemoveKey={onRemoveKey} />
-      </div>
-    </div>
+      </CardActions>
+    </Card>
   );
 };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import ButtonDelete from '../ButtonDelete';
+import { Card, CardContent, CardActions, Box, Typography } from '@mui/material';
 
 interface CardVCardProps {
   data: { [key: string]: string };
@@ -8,19 +9,19 @@ interface CardVCardProps {
 
 const CardVCard: React.FC<CardVCardProps> = ({ data, onRemoveKey }) => {
   return (
-    <div className="v-card mx-auto" style={{ maxWidth: '600px', variant: 'flat' }}>
-      <div className="v-card-item">
+    <Card sx={{ maxWidth: 600, mx: 'auto', variant: 'outlined' }}>
+      <CardContent>
         {Object.entries(data).map(([key, value]) => (
-          <div key={key}>
+          <Typography key={key} variant="body1">
             {key}: {value}
-          </div>
+          </Typography>
         ))}
-      </div>
-      <div className="v-card-actions">
-        <div className="v-spacer" />
+      </CardContent>
+      <CardActions>
+        <Box sx={{ flexGrow: 1 }} />
         <ButtonDelete onRemoveKey={onRemoveKey} />
-      </div>
-    </div>
+      </CardActions>
+    </Card>
   );
 };
 

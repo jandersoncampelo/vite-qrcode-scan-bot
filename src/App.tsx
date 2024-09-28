@@ -43,8 +43,6 @@ const App: React.FC = () => {
       loadStorage();
     }
 
-    setIsTelegramClient(true);
-    setIsTelegramApiUpdated(true);
   }, [isTelegramClient, isTelegramApiUpdated]);
 
   useEffect(() => {
