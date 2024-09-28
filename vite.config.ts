@@ -7,5 +7,5 @@ export default defineConfig({
   build: {
     outDir: './docs'
   },
-  base: '/vite-boilerplate/'
+  base: '/vite-qrcode-scan-bot/'
 });
