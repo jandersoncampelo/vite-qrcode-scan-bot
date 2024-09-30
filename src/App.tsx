@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AppMenu from './Components/AppMenu';
 import RequirementsMessage from './Components/RequirementsMessage';
+import ScanHistory from './Components/ScanHistory';
 
 import WebApp from '@twa-dev/sdk';
 import { detectCodeType } from './utils/helper';
@@ -126,6 +127,19 @@ const App: React.FC = () => {
     showQrScanner();
   };
 
+  const removeKey = (key: string) => {
+    WebApp.CloudStorage.removeItem(key, (error) => {
+      if (error) {
+        WebApp.showAlert('Failed to remove item');
+        return;
+      }
+      const keys = cloudStorageKeys.filter((k) => k !== key);
+      setCloudStorageKeys(keys);
+      const values = { ...cloudStorageValues };
+      delete values[key];
+      setCloudStorageValues(values);
+    });
+  }
   return (
       <div id="main">
         <AppMenu
@@ -137,7 +151,12 @@ const App: React.FC = () => {
           isTelegramApiUpdated={isTelegramApiUpdated}
           telegramApiVersion="6.9"
         />
-        {/* Render other components based on state */}
+        <ScanHistory
+          showHistory={showHistory}
+          cloudStorageKeys={cloudStorageKeys}
+          enrichedValues={enrichedValues}
+          removeKey={removeKey}
+        />
       </div>
   );
 };
