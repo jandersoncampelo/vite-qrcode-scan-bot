@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AppMenu from './Components/AppMenu';
-import RequirementsMessage from './Components/RequirementsMessage';
 import ScanHistory from './Components/ScanHistory';
 
 import WebApp from '@twa-dev/sdk';
@@ -8,45 +7,40 @@ import { detectCodeType } from './utils/helper';
 
 
 const App: React.FC = () => {
-  const [isTelegramClient, setIsTelegramClient] = useState(false);
-  const [isTelegramApiUpdated, setIsTelegramApiUpdated] = useState(false);
   const [lastCode, setLastCode] = useState<string>('');
   const [showHistory, setShowHistory] = useState(true);
 
-  const [enrichedValues, setEnrichedValues] = useState<{ [key: string]: { type: string; value: string } }>({});
+  const [enrichedValues, setEnrichedValues] = useState<{ [key: string] : {type: string; value: string} }[]>([]);
   const [cloudStorageKeys, setCloudStorageKeys] = useState<string[]>([]);
   const [cloudStorageValues, setCloudStorageValues] = useState<{ [key: string]: string }>({});
 
-
-  useEffect(() => {
-    WebApp.MainButton.setText("Scan QR code");
-    WebApp.onEvent('qrTextReceived', processQRCode);
-    WebApp.onEvent('mainButtonClicked', mainButtonClicked);
-
-    setIsTelegramApiUpdated(WebApp.isVersionAtLeast('6.9'));
-    if (WebApp.platform !== "unknown") {
-      setIsTelegramClient(true);
-    }
-    if (isTelegramClient && isTelegramApiUpdated) {
-      WebApp.MainButton.show();
-      loadStorage();
-    }
-
-  }, [isTelegramClient, isTelegramApiUpdated]);
-
   useEffect(() => {
     WebApp.ready();
+    WebApp.MainButton.setText("Scan QR code");
+    WebApp.MainButton.show();
+  }, []);
 
-    const enriched = Object.keys(cloudStorageValues).reduce((acc, key) => {
-      acc[key] = { type: 'url', value: cloudStorageValues[key] };
-      return acc;
-    }, {} as { [key: string]: { type: string; value: string } });
-    
-    setEnrichedValues(enriched);
-  }, [cloudStorageValues]);
+  const addToStorage = useCallback((value: string) => {
+    const key = new Date().toISOString();
+    WebApp.CloudStorage.setItem(key, value, (error: string | null, result?: boolean) => {
+      if (error) {
+        WebApp.showAlert('Failed to save item');
+        return;
+      }
 
-  const processQRCode = ({ data }: { data: string }) => {
-    // Implement QR code processing logic
+      if (result === false) {
+        WebApp.showAlert('Failed to save item');
+        return;
+      }
+
+      setCloudStorageKeys([...cloudStorageKeys, key]);
+      setCloudStorageValues({ ...cloudStorageValues, [key]: value });
+    });
+
+    return key;
+  }, [cloudStorageKeys, cloudStorageValues]); 
+
+  const processQRCode = useCallback(({ data }: { data: string }) => {
     if(data.length > 4096) {
       WebApp.showAlert('QR code is too long');
       return;
@@ -56,6 +50,8 @@ const App: React.FC = () => {
 
     setLastCode(data);
     hapticImpact();
+
+    WebApp.showAlert(data);
 
     const codeType = detectCodeType(data);
     if (codeType === null || codeType === undefined || codeType !== "url") {
@@ -69,62 +65,21 @@ const App: React.FC = () => {
     setShowHistory(true);
 
     WebApp.closeScanQrPopup();   
-  };
+  }, [lastCode, cloudStorageValues, enrichedValues, addToStorage]);
+
+  useEffect(() => {
+    WebApp.onEvent('qrTextReceived', processQRCode);
+    WebApp.onEvent('mainButtonClicked', () => showQrScanner());
+  }, [processQRCode]);
 
   const hapticImpact = () => {
     WebApp.HapticFeedback.impactOccurred('rigid');
     WebApp.HapticFeedback.impactOccurred('heavy');
   };
 
-  const addToStorage = (value: string) => {
-    const key = new Date().toISOString();
-    WebApp.CloudStorage.setItem(key, value, () => {
-      setCloudStorageKeys([...cloudStorageKeys, key]);
-      setCloudStorageValues({ ...cloudStorageValues, [key]: value });
-    });
-
-    return key;
-  } 
-
-  const loadStorage = () => {
-    WebApp.CloudStorage.getKeys((error, data) => processStorage(error, data));
-  };
-
-  const processStorage = (error: string | null, data:string[] | undefined) => {
-    if (error) {
-      WebApp.showAlert('Failed to load storage');
-      return;
-    }
-    if (data === undefined) {
-      return;
-    }
-    data.sort((a, b) => {
-      return new Date(b).getTime() - new Date(a).getTime();
-    });
-    setCloudStorageKeys(data);
-    data.forEach((key) => {
-      loadStorageItem(key);
-    });
-  };
-
-  const loadStorageItem = (key: string) => {
-    WebApp.CloudStorage.getItem(key, (error, value) => {
-      if (error) {
-        WebApp.showAlert('Failed to load storage item');
-        return;
-      }
-      if (value !== undefined) 
-        setCloudStorageValues({ ...cloudStorageValues, [key]: value });
-    });
-  };
-
   const showQrScanner = () => {
     const params = { text: "", isContinuous: false };
     WebApp.showScanQrPopup(params);
-  };
-
-  const mainButtonClicked = () => {
-    showQrScanner();
   };
 
   const removeKey = (key: string) => {
@@ -140,20 +95,15 @@ const App: React.FC = () => {
       setCloudStorageValues(values);
     });
   }
+
   return (
       <div id="main">
         <AppMenu
           onShowQrScanner={() => showQrScanner()}
           onShowHistory={() => setShowHistory(!showHistory)}
         />
-        <RequirementsMessage
-          isTelegramClient={isTelegramClient}
-          isTelegramApiUpdated={isTelegramApiUpdated}
-          telegramApiVersion="6.9"
-        />
         <ScanHistory
           showHistory={showHistory}
-          cloudStorageKeys={cloudStorageKeys}
           enrichedValues={enrichedValues}
           removeKey={removeKey}
         />

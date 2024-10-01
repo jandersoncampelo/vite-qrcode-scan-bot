@@ -3,11 +3,11 @@ import ButtonDelete from '../ButtonDelete';
 import { Card, CardContent, CardActions, Box, Button, Typography } from '@mui/material';
 
 interface CardUrlProps {
-  data: { value: string };
+  value: string;
   onRemoveKey: () => void;
 }
 
-const CardUrl: React.FC<CardUrlProps> = ({ data, onRemoveKey }) => {
+const CardUrl: React.FC<CardUrlProps> = ({ value, onRemoveKey }) => {
   const openLink = (url: string) => {
     window.open(url, '_blank');
   };
@@ -15,7 +15,7 @@ const CardUrl: React.FC<CardUrlProps> = ({ data, onRemoveKey }) => {
   return (
     <Card sx={{ maxWidth: 600, mx: 'auto', variant: 'outlined' }}>
       <CardContent>
-        <Typography variant="body1">{data.value}</Typography>
+        <Typography variant="body1">{value}</Typography>
       </CardContent>
       <CardActions>
         <Box sx={{ flexGrow: 1 }} />
@@ -23,7 +23,7 @@ const CardUrl: React.FC<CardUrlProps> = ({ data, onRemoveKey }) => {
           size="large"
           color="primary"
           variant="contained"
-          onClick={() => openLink(data.value)}
+          onClick={() => openLink(value)}
         >
           Open Link
         </Button>
