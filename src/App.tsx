@@ -40,7 +40,28 @@ const App: React.FC = () => {
     return key;
   }, [cloudStorageKeys, cloudStorageValues]); 
 
-  const processQRCode = useCallback(({ data }: { data: string }) => {
+  const sendToServer = useCallback(async (qrcode: string) => {
+    try {
+      const response = await fetch('https://func-process-link.azurewebsites.net/api/process_link_function?code=eQ3o9ct14HS-uH-8ChDnHutobeBlbcg0uap6JTsYv501AzFuty7Xlw%3D%3D', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: qrcode }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const apiData = await response.json();
+      WebApp.showAlert(`API Response: ${JSON.stringify(apiData)}`);
+    } catch (error) {
+      WebApp.showAlert(`Fetch error: ${(error as Error).message}`);
+    }
+  }, []);
+  
+  const processQRCode = useCallback(async ({ data }: { data: string }) => {
     if(data.length > 4096) {
       WebApp.showAlert('QR code is too long');
       return;
@@ -59,13 +80,15 @@ const App: React.FC = () => {
       return;
     }
 
+    await sendToServer(data);
+
     const key = addToStorage(data);
     setEnrichedValues({ ...enrichedValues, [key]: { type: 'url', value: cloudStorageValues[key] } });
 
     setShowHistory(true);
 
     WebApp.closeScanQrPopup();   
-  }, [lastCode, cloudStorageValues, enrichedValues, addToStorage]);
+  }, [lastCode, cloudStorageValues, enrichedValues, addToStorage, sendToServer]);
 
   useEffect(() => {
     WebApp.onEvent('qrTextReceived', processQRCode);
