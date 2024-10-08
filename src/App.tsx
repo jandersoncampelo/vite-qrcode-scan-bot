@@ -50,6 +50,7 @@ const App: React.FC = () => {
           setCloudStorageValues(values);
         });
       });
+      WebApp.showAlert(cloudStorageValues.length + ' items loaded');
     });
   });
 
@@ -84,25 +85,24 @@ const App: React.FC = () => {
     setLastCode(data);
     hapticImpact();
 
-    fetch(import.meta.env.VITE_HTTP_TRIGGER, {
-      method: 'POST',
-      body: JSON.stringify({ name: data }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      WebApp.showAlert('Success:', data);
-    })
-    .catch((error) => {
-      WebApp.showAlert('Error:', error);
-    });
-
     const codeType = detectCodeType(data);
     if (codeType === null || codeType === undefined || codeType !== "url") {
       WebApp.showAlert('Unsupported QR code type');
       return;
+    }
+
+    try {
+      const response = await fetch(import.meta.env.VITE_HTTP_TRIGGER, {
+        method: 'POST',
+        body: JSON.stringify({ name: data }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const result = await response.json();
+      WebApp.showAlert('Success:', result);
+    } catch (error) {
+      WebApp.showAlert('Error: ' + String(error));
     }
 
     const key = addToStorage(data);
