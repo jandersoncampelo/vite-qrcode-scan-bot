@@ -5,6 +5,8 @@ import ScanHistory from './Components/ScanHistory';
 import WebApp from '@twa-dev/sdk';
 import { detectCodeType } from './utils/helper';
 
+import { Buffer } from 'buffer';
+(window as unknown as { Buffer: typeof Buffer }).Buffer = Buffer;
 
 const App: React.FC = () => {
   const [lastCode, setLastCode] = useState<string>('');
@@ -18,7 +20,38 @@ const App: React.FC = () => {
     WebApp.ready();
     WebApp.MainButton.setText("Scan QR code");
     WebApp.MainButton.show();
-  }, []);
+
+    WebApp.CloudStorage.getKeys((error: string | null, keys?: string[]) => {
+      if (error) {
+        WebApp.showAlert('Failed to load items');
+        return;
+      }
+
+      if (keys === undefined) {
+        WebApp.showAlert('Failed to load items');
+        return;
+      }
+
+      setCloudStorageKeys(keys);
+      const values: { [key: string]: string } = {};
+      keys.forEach((key) => {
+        WebApp.CloudStorage.getItem(key, (error: string | null, value?: string) => {
+          if (error) {
+            WebApp.showAlert('Failed to load items');
+            return;
+          }
+
+          if (value === undefined) {
+            WebApp.showAlert('Failed to load items');
+            return;
+          }
+
+          values[key] = value;
+          setCloudStorageValues(values);
+        });
+      });
+    });
+  });
 
   const addToStorage = useCallback((value: string) => {
     const key = new Date().toISOString();
@@ -40,27 +73,6 @@ const App: React.FC = () => {
     return key;
   }, [cloudStorageKeys, cloudStorageValues]); 
 
-  const sendToServer = useCallback(async (qrcode: string) => {
-    try {
-      const response = await fetch('https://func-process-link.azurewebsites.net/api/process_link_function?code=eQ3o9ct14HS-uH-8ChDnHutobeBlbcg0uap6JTsYv501AzFuty7Xlw%3D%3D', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: qrcode }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const apiData = await response.json();
-      WebApp.showAlert(`API Response: ${JSON.stringify(apiData)}`);
-    } catch (error) {
-      WebApp.showAlert(`Fetch error: ${(error as Error).message}`);
-    }
-  }, []);
-  
   const processQRCode = useCallback(async ({ data }: { data: string }) => {
     if(data.length > 4096) {
       WebApp.showAlert('QR code is too long');
@@ -72,7 +84,20 @@ const App: React.FC = () => {
     setLastCode(data);
     hapticImpact();
 
-    WebApp.showAlert(data);
+    fetch(import.meta.env.VITE_HTTP_TRIGGER, {
+      method: 'POST',
+      body: JSON.stringify({ name: data }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      WebApp.showAlert('Success:', data);
+    })
+    .catch((error) => {
+      WebApp.showAlert('Error:', error);
+    });
 
     const codeType = detectCodeType(data);
     if (codeType === null || codeType === undefined || codeType !== "url") {
@@ -80,15 +105,13 @@ const App: React.FC = () => {
       return;
     }
 
-    await sendToServer(data);
-
     const key = addToStorage(data);
     setEnrichedValues({ ...enrichedValues, [key]: { type: 'url', value: cloudStorageValues[key] } });
 
     setShowHistory(true);
 
     WebApp.closeScanQrPopup();   
-  }, [lastCode, cloudStorageValues, enrichedValues, addToStorage, sendToServer]);
+  }, [lastCode, cloudStorageValues, enrichedValues, addToStorage]);
 
   useEffect(() => {
     WebApp.onEvent('qrTextReceived', processQRCode);
@@ -100,7 +123,9 @@ const App: React.FC = () => {
     WebApp.HapticFeedback.impactOccurred('heavy');
   };
 
-  const showQrScanner = () => {
+  const showQrScanner = async () => {
+    console.log("Link Enviado");
+
     const params = { text: "", isContinuous: false };
     WebApp.showScanQrPopup(params);
   };
