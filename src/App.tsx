@@ -82,24 +82,21 @@ const App: React.FC = () => {
       return;
     }
 
-    try {
-      const response = await fetch(import.meta.env.VITE_HTTP_TRIGGER, {
-        method: 'POST',
-        body: JSON.stringify({ name: data }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      const result = await response.json();
-      WebApp.showAlert('Success:', result);
-    } catch (error) {
-      WebApp.showAlert('Error: ' + String(error));
-    }
+    await fetch(import.meta.env.VITE_HTTP_TRIGGER, {
+      method: 'POST',
+      body: JSON.stringify({ name: data }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const key = new Date().toISOString();
+    setEnrichedValues([...enrichedValues, { [key]: { type: codeType, value: data } }]);
 
     setShowHistory(true);
 
     WebApp.closeScanQrPopup();   
-  }, [lastCode]);
+  }, [lastCode, enrichedValues]);
 
   useEffect(() => {
     WebApp.onEvent('qrTextReceived', processQRCode);
