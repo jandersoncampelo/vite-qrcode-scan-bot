@@ -33,52 +33,43 @@ const App: React.FC = () => {
       }
 
       setCloudStorageKeys(keys);
-      const values: { [key: string]: string } = {};
-      keys.forEach((key) => {
-        WebApp.CloudStorage.getItem(key, (error: string | null, value?: string) => {
-          if (error) {
-            WebApp.showAlert('Failed to load items');
-            return;
-          }
+    });
+  }, []);
 
-          if (value === undefined) {
-            WebApp.showAlert('Failed to load items');
-            return;
-          }
+  useEffect(() => {
+    const values: { [key: string]: string } = {};
+    cloudStorageKeys.forEach((key) => {
+      WebApp.CloudStorage.getItem(key, (error: string | null, value?: string) => {
+        if (error) {
+          WebApp.showAlert('Failed to load item');
+          return;
+        }
 
-          values[key] = value;
-          setCloudStorageValues(values);
-        });
+        if (value === undefined) {
+          WebApp.showAlert('Failed to load item');
+          return;
+        }
+
+        values[key] = value;
+        setCloudStorageValues(values);
       });
-      WebApp.showAlert(cloudStorageValues.length + ' items loaded');
     });
-  });
+  }, [cloudStorageKeys]);
 
-  const addToStorage = useCallback((value: string) => {
-    const key = new Date().toISOString();
-    WebApp.CloudStorage.setItem(key, value, (error: string | null, result?: boolean) => {
-      if (error) {
-        WebApp.showAlert('Failed to save item');
-        return;
-      }
-
-      if (result === false) {
-        WebApp.showAlert('Failed to save item');
-        return;
-      }
-
-      setCloudStorageKeys([...cloudStorageKeys, key]);
-      setCloudStorageValues({ ...cloudStorageValues, [key]: value });
+  useEffect(() => {
+    const enrichedValues = cloudStorageKeys.map((key) => {
+      const value = cloudStorageValues[key];
+      return { [key]: { type: detectCodeType(value), value } };
     });
-
-    return key;
-  }, [cloudStorageKeys, cloudStorageValues]); 
+    setEnrichedValues(enrichedValues);
+  }, [cloudStorageKeys, cloudStorageValues]);
 
   const processQRCode = useCallback(async ({ data }: { data: string }) => {
     if(data.length > 4096) {
       WebApp.showAlert('QR code is too long');
       return;
     }
+    
     if(data == lastCode)
       return;
 
@@ -105,13 +96,10 @@ const App: React.FC = () => {
       WebApp.showAlert('Error: ' + String(error));
     }
 
-    const key = addToStorage(data);
-    setEnrichedValues({ ...enrichedValues, [key]: { type: 'url', value: cloudStorageValues[key] } });
-
     setShowHistory(true);
 
     WebApp.closeScanQrPopup();   
-  }, [lastCode, cloudStorageValues, enrichedValues, addToStorage]);
+  }, [lastCode]);
 
   useEffect(() => {
     WebApp.onEvent('qrTextReceived', processQRCode);
@@ -124,8 +112,6 @@ const App: React.FC = () => {
   };
 
   const showQrScanner = async () => {
-    console.log("Link Enviado");
-
     const params = { text: "", isContinuous: false };
     WebApp.showScanQrPopup(params);
   };
