@@ -81,15 +81,7 @@ const App: React.FC = () => {
       WebApp.showAlert('Unsupported QR code type');
       return;
     }
-
-    await fetch(import.meta.env.VITE_HTTP_TRIGGER, {
-      method: 'POST',
-      body: JSON.stringify({ name: data }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
+    
     setShowHistory(true);
 
     WebApp.closeScanQrPopup();   
@@ -98,7 +90,7 @@ const App: React.FC = () => {
   useEffect(() => {
     WebApp.onEvent('qrTextReceived', processQRCode);
     WebApp.onEvent('mainButtonClicked', () => showQrScanner());
-  },[]);
+  }, [processQRCode]);
 
   const hapticImpact = () => {
     WebApp.HapticFeedback.impactOccurred('rigid');
