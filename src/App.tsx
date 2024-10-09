@@ -31,7 +31,7 @@ const App: React.FC = () => {
         WebApp.showAlert('Failed to load items');
         return;
       }
-
+      WebApp.showAlert(keys.length + ' keys loaded');
       setCloudStorageKeys(keys);
     });
   }, []);
@@ -90,13 +90,10 @@ const App: React.FC = () => {
       }
     });
 
-    const key = new Date().toISOString();
-    setEnrichedValues([...enrichedValues, { [key]: { type: codeType, value: data } }]);
-
     setShowHistory(true);
 
     WebApp.closeScanQrPopup();   
-  }, [lastCode, enrichedValues]);
+  }, [lastCode]);
 
   useEffect(() => {
     WebApp.onEvent('qrTextReceived', processQRCode);
