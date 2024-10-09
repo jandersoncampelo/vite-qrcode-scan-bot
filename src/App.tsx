@@ -98,7 +98,7 @@ const App: React.FC = () => {
   useEffect(() => {
     WebApp.onEvent('qrTextReceived', processQRCode);
     WebApp.onEvent('mainButtonClicked', () => showQrScanner());
-  }, [processQRCode]);
+  },[]);
 
   const hapticImpact = () => {
     WebApp.HapticFeedback.impactOccurred('rigid');
