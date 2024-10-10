@@ -20,7 +20,9 @@ const App: React.FC = () => {
     WebApp.ready();
     WebApp.MainButton.setText("Scan QR code");
     WebApp.MainButton.show();
+  }, []);
 
+  const loadStorageKeys = useCallback(() => {
     WebApp.CloudStorage.getKeys((error: string | null, keys?: string[]) => {
       if (error) {
         WebApp.showAlert('Failed to load items');
@@ -35,6 +37,10 @@ const App: React.FC = () => {
       setCloudStorageKeys(keys);
     });
   }, []);
+  
+  useEffect(() => {
+    loadStorageKeys()
+  }, [loadStorageKeys]);
 
   useEffect(() => {
     const values: { [key: string]: string } = {};
@@ -54,6 +60,7 @@ const App: React.FC = () => {
         setCloudStorageValues(values);
       });
     });
+    WebApp.showAlert('Values loaded');
   }, [cloudStorageKeys]);
 
   useEffect(() => {
@@ -81,11 +88,20 @@ const App: React.FC = () => {
       WebApp.showAlert('Unsupported QR code type');
       return;
     }
-    
+
     setShowHistory(true);
+    WebApp.CloudStorage.setItem(Date.now().toString(), data, (error) => {
+      if (error) {
+        WebApp.showAlert('Failed to save item');
+        return;
+      }
+      WebApp.showAlert('Item saved');
+    });
 
     WebApp.closeScanQrPopup();   
-  }, [lastCode]);
+
+    loadStorageKeys();
+  }, [lastCode, loadStorageKeys]);
 
   useEffect(() => {
     WebApp.onEvent('qrTextReceived', processQRCode);
