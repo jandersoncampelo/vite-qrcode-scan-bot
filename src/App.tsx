@@ -22,7 +22,19 @@ const App: React.FC = () => {
 
     hapticImpact();
 
-    WebApp.showAlert(data.data);
+    WebApp.showConfirm(data.data, 
+      async (confirmed) => {
+        if (confirmed) {
+          await fetch(import.meta.env.VITE_HTTP_TRIGGER, {
+            method: 'POST',
+            body: JSON.stringify({ name: data.data }),
+            headers: {
+            'Content-Type': 'application/json'
+            }
+        });
+        }
+      }
+    );
 
     WebApp.closeScanQrPopup();
   }, [lastCode]);
