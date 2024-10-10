@@ -1,112 +1,138 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { prepareUrl } from './utils/helper';
 import AppMenu from './Components/AppMenu';
 import ScanHistory from './Components/ScanHistory';
 
 import WebApp from '@twa-dev/sdk';
-import { detectCodeType } from './utils/helper';
 
 import { Buffer } from 'buffer';
 (window as unknown as { Buffer: typeof Buffer }).Buffer = Buffer;
 
+interface CloudStorageValues {
+  [key: string]: string;
+}
+
+export interface EnrichedValues {
+  [key: string]: {
+    type: string;
+    info: string;
+  };
+}
+
 const App: React.FC = () => {
+  const [isTelegramClient, setIsTelegramClient] = useState(false);
+  const [isTelegramApiUpdated, setIsTelegramApiUpdated] = useState(false);
+
   const [lastCode, setLastCode] = useState<string>('');
   const [showHistory, setShowHistory] = useState(true);
 
-  const [enrichedValues, setEnrichedValues] = useState<{ [key: string] : {type: string; value: string} }[]>([]);
+  const [enrichedValues, setEnrichedValues] = useState<EnrichedValues[]>([]);
   const [cloudStorageKeys, setCloudStorageKeys] = useState<string[]>([]);
-  const [cloudStorageValues, setCloudStorageValues] = useState<{ [key: string]: string }>({});
+  const [cloudStorageValues, setCloudStorageValues] = useState<CloudStorageValues>({});
 
   useEffect(() => {
-    WebApp.ready();
-    WebApp.MainButton.setText("Scan QR code");
-    WebApp.MainButton.show();
+    WebApp.MainButton.setText('Scan QR');
+    WebApp.onEvent('mainButtonClicked', mainButtonClicked);
+    WebApp.onEvent('qrTextReceived', () => processQRCode);
 
+    setIsTelegramApiUpdated(WebApp.isVersionAtLeast('6.9'));
+    setIsTelegramClient(WebApp.platform !== 'unknown');
+
+    if (isTelegramClient && isTelegramApiUpdated) {
+      WebApp.MainButton.show();
+      loadStorage()
+    }
+
+    WebApp.ready();
+
+  }, [isTelegramClient, isTelegramApiUpdated]);
+
+  const mainButtonClicked = () => {
+    showQRScanner();
+  };
+
+  const showQRScanner = () => {
+    const params = { text: "", isContinuous: false };
+    WebApp.showScanQrPopup(params);
+  };
+
+  const loadStorage = () => {
     WebApp.CloudStorage.getKeys((error: string | null, keys?: string[]) => {
       if (error) {
-        WebApp.showAlert('Failed to load items');
+        WebApp.showAlert('Failed to load keys');
         return;
       }
 
-      if (keys === undefined) {
-        WebApp.showAlert('Failed to load items');
-        return;
+      if (keys) {
+        keys.sort((a, b) => parseInt(b) - parseInt(a));
+        
+        setCloudStorageKeys(keys);
       }
-      WebApp.showAlert(keys.length + ' keys loaded');
-      setCloudStorageKeys(keys);
     });
-  }, []);
 
-  useEffect(() => {
-    const values: { [key: string]: string } = {};
-    cloudStorageKeys.forEach((key) => {
-      WebApp.CloudStorage.getItem(key, (error: string | null, value?: string) => {
-        if (error) {
-          WebApp.showAlert('Failed to load item');
-          return;
-        }
+    WebApp.CloudStorage.getItems(cloudStorageKeys, (error: string | null, values?: CloudStorageValues) => {
+      if (error) {
+        WebApp.showAlert('Failed to load items');
+        return;
+      }
 
-        if (value === undefined) {
-          WebApp.showAlert('Failed to load item');
-          return;
-        }
-
-        values[key] = value;
+      if (values) {
         setCloudStorageValues(values);
-      });
+        enrichValues(values);
+      }
     });
-    WebApp.showAlert('Values loaded');
-  }, [cloudStorageKeys]);
+  }
 
-  useEffect(() => {
-    const enrichedValues = cloudStorageKeys.map((key) => {
-      const value = cloudStorageValues[key];
-      return { [key]: { type: 'url', value } };
-    });
-    setEnrichedValues(enrichedValues);
-  }, [cloudStorageKeys, cloudStorageValues]);
+  const enrichValues = (data: CloudStorageValues) => {
+    for (const key in data) {
+      enrichValue(key);
+    }
+  };
 
-  const processQRCode = useCallback(async ({ data }: { data: string }) => {
-    if(data.length > 4096) {
-      WebApp.showAlert('QR code is too long');
+  const enrichValue = (key: string) => {
+    const value = cloudStorageValues[key];
+    const result = prepareUrl(value);
+    if (result.is_url)
+      setEnrichedValues([{ [key]: { type: 'url', info: result.value } }, ...enrichedValues]);
+  };
+
+
+  const processQRCode = (data: { data: string }) => {
+    if (data.data.length > 4096) {
+      WebApp.showAlert('Error cannot store QR codes longer than 4096 characters');
       return;
     }
-    
-    if(data == lastCode)
+    if (data.data === lastCode) {
       return;
+    }
+    setLastCode(data.data);
 
-    setLastCode(data);
     hapticImpact();
 
-    const codeType = detectCodeType(data);
-    if (codeType === null || codeType === undefined || codeType !== "url") {
-      WebApp.showAlert('Unsupported QR code type');
-      return;
-    }
+    const key = addToStorage(data.data);
+
+    enrichValue(key);
 
     setShowHistory(true);
-    WebApp.CloudStorage.setItem(Date.now().toString(), data, (error) => {
-      if (error) {
-        WebApp.showAlert('Failed to save item');
-        return;
-      }
-      WebApp.showAlert('Item saved');
-    });
 
-    WebApp.closeScanQrPopup();   
-
-  }, [lastCode]);
-
-  useEffect(() => {
-    WebApp.onEvent('qrTextReceived', processQRCode);
-    WebApp.onEvent('mainButtonClicked', () => showQrScanner());
-  }, [processQRCode]);
+    WebApp.closeScanQrPopup();
+  };
 
   const hapticImpact = () => {
     WebApp.HapticFeedback.impactOccurred('rigid');
     WebApp.HapticFeedback.impactOccurred('heavy');
   };
 
-  const showQrScanner = async () => {
+  const addToStorage = (value: string) => {
+    const timestamp = new Date().getTime().toString();
+
+    WebApp.CloudStorage.setItem(timestamp, value);
+    setCloudStorageKeys([timestamp, ...cloudStorageKeys]);
+    setCloudStorageValues({ ...cloudStorageValues, [timestamp]: value });
+    return timestamp;
+  };
+
+  const showQrScanner = () => {
     const params = { text: "", isContinuous: false };
     WebApp.showScanQrPopup(params);
   };
@@ -128,7 +154,7 @@ const App: React.FC = () => {
   return (
       <div id="main">
         <AppMenu
-          onShowQrScanner={() => showQrScanner()}
+          onShowQrScanner={ showQrScanner }
           onShowHistory={() => setShowHistory(!showHistory)}
         />
         <ScanHistory

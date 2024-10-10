@@ -10,14 +10,11 @@ import {
 import LinkIcon from "@mui/icons-material/Link";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CardUrl from "../CardUrl";
-
-interface EnrichedValue {
-  [key: string]: { type: string; value: string };
-}
+import { EnrichedValues } from "../../App";
 
 interface ScanHistoryProps {
   showHistory: boolean;
-  enrichedValues: EnrichedValue[];
+  enrichedValues: EnrichedValues[];
   removeKey: (key: string) => void;
 }
 
@@ -33,16 +30,16 @@ const ScanHistory: React.FC<ScanHistoryProps> = ({
       setExpandedPanels(isExpanded ? panel : false);
     };
 
-  const formattedDate = (data: EnrichedValue) => {
+  const formattedDate = (data: EnrichedValues) => {
     const key = Object.keys(data)[0];
     console.log(key);
     const date = new Date(key);
     return date.toLocaleString();
   };
 
-  const limitLength = (data: EnrichedValue) => {
+  const limitLength = (data: EnrichedValues) => {
     const maxLength = 35;
-    const value = Object.values(data)[0].value;
+    const value = Object.values(data)[0].info;
     return value.length > maxLength
       ? `${value.substring(0, maxLength)}...`
       : value;
@@ -79,12 +76,12 @@ const ScanHistory: React.FC<ScanHistoryProps> = ({
                       </Typography>
                     </Typography>
                   </AccordionSummary>
-                  <AccordionDetails>
+                    <AccordionDetails>
                     <CardUrl
-                      value={Object.values(data)[0].value}
-                      onRemoveKey={() => removeKey(data[index].value)}
+                      value={Object.values(data)[0].info}
+                      onRemoveKey={() => removeKey(Object.keys(data)[0])}
                     />
-                  </AccordionDetails>
+                    </AccordionDetails>
                 </Accordion>
               ))}
             </div>
