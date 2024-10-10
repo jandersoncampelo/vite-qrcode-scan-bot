@@ -1,6 +1,7 @@
 import React from 'react';
 import ButtonDelete from '../ButtonDelete';
 import { Card, CardContent, CardActions, Box, Button, Typography } from '@mui/material';
+import ButtonSend from '../ButtonSend';
 
 interface CardUrlProps {
   value: string;
@@ -29,6 +30,7 @@ const CardUrl: React.FC<CardUrlProps> = ({ value, onRemoveKey }) => {
         </Button>
         <Box sx={{ flexGrow: 1 }} />
         <ButtonDelete onRemoveKey={onRemoveKey} />
+        <ButtonSend message={value} />
       </CardActions>
     </Card>
   );
