@@ -6,21 +6,12 @@ interface ButtonSendProps {
     message: string;
   }
 
-const SendToQueue = async (data: string) => {
-    await fetch(import.meta.env.VITE_HTTP_TRIGGER, {
-        method: 'POST',
-        body: JSON.stringify({ name: data }),
-        headers: {
-        'Content-Type': 'application/json'
-        }
-    });
-    };
 
-const ButtonSend: React.FC<ButtonSendProps> = ({ message }) => {
+
+const ButtonSend: React.FC<ButtonSendProps> = () => {
   return (
     <IconButton
       color="primary"
-      onClick={() => SendToQueue(message)}
     >
       <SendIcon />
     </IconButton>

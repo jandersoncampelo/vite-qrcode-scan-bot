@@ -10,7 +10,13 @@ import {
 import LinkIcon from "@mui/icons-material/Link";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CardUrl from "../CardUrl";
-import { EnrichedValues } from "../../App";
+
+interface EnrichedValues {
+  [key: string]: {
+    type: string;
+    info: string;
+  };
+}
 
 interface ScanHistoryProps {
   showHistory: boolean;
