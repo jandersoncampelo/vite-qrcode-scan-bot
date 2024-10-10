@@ -49,7 +49,7 @@ class App extends Component<object, AppState> {
     WebApp.onEvent('mainButtonClicked', this.showQrScanner);
   }
 
-  componentDidUpdate(prevProps: object, prevState: AppState) {
+  componentDidUpdate(prevState: AppState) {
     if (prevState.cloudStorageKeys !== this.state.cloudStorageKeys) {
       const values: { [key: string]: string } = {};
       this.state.cloudStorageKeys.forEach((key) => {
