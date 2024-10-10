@@ -70,6 +70,7 @@ const App: React.FC = () => {
       }
     });
 
+    WebApp.showAlert(cloudStorageKeys.length + ' keys loaded');
     WebApp.CloudStorage.getItems(cloudStorageKeys, (error: string | null, values?: CloudStorageValues) => {
       if (error) {
         WebApp.showAlert('Failed to load items');
@@ -81,12 +82,17 @@ const App: React.FC = () => {
         enrichValues(values);
       }
     });
+
+    WebApp.showAlert(cloudStorageValues.length + ' values loaded');
   }
+
 
   const enrichValues = (data: CloudStorageValues) => {
     for (const key in data) {
       enrichValue(key);
     }
+
+    WebApp.showAlert(enrichedValues.length + ' rich values loaded');
   };
 
   const enrichValue = (key: string) => {
