@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { prepareUrl } from './utils/helper';
 import AppMenu from './Components/AppMenu';
 import ScanHistory from './Components/ScanHistory';
@@ -103,7 +103,7 @@ const App: React.FC = () => {
   };
 
 
-  const processQRCode = (data: { data: string }) => {
+  const processQRCode = useCallback(async ( data : { data: string }) => {
     if (data.data.length > 4096) {
       WebApp.showAlert('Error cannot store QR codes longer than 4096 characters');
       return;
@@ -122,7 +122,7 @@ const App: React.FC = () => {
     setShowHistory(true);
 
     WebApp.closeScanQrPopup();
-  };
+  }, [lastCode]);
 
   const hapticImpact = () => {
     WebApp.HapticFeedback.impactOccurred('rigid');
