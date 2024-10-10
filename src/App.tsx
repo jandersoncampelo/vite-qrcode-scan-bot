@@ -23,15 +23,17 @@ const App: React.FC = () => {
     hapticImpact();
 
     WebApp.showConfirm(data.data, 
-      (confirmed) => {
+      async (confirmed) => {
         if (confirmed) {
-          fetch(import.meta.env.VITE_HTTP_TRIGGER, {
+          await fetch(import.meta.env.VITE_HTTP_TRIGGER, {
             method: 'POST',
             body: JSON.stringify({ name: data.data }),
             headers: {
             'Content-Type': 'application/json'
             }
-        });
+        })
+        .catch((error) => { WebApp.showAlert('Error: ' + error); })
+        .then((response) => {WebApp.showAlert('Success: ' + response); });
         }
       }
     );
