@@ -33,7 +33,7 @@ const App: React.FC = () => {
   useEffect(() => {
     WebApp.MainButton.setText('Scan QR');
     WebApp.onEvent('mainButtonClicked', mainButtonClicked);
-    WebApp.onEvent('qrTextReceived', () => processQRCode);
+    WebApp.onEvent('qrTextReceived', processQRCode);
 
     setIsTelegramApiUpdated(WebApp.isVersionAtLeast('6.9'));
     setIsTelegramClient(WebApp.platform !== 'unknown');
