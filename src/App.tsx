@@ -33,7 +33,7 @@ const App: React.FC = () => {
             }
         })
         .catch((error) => { WebApp.showAlert('Error: ' + error); })
-        .then((response) => {WebApp.showAlert('Success: ' + response); });
+        .then(() => {WebApp.showAlert('Cupom enfileirado com sucesso!'); });
         }
       }
     );
