@@ -20,9 +20,7 @@ const App: React.FC = () => {
     WebApp.ready();
     WebApp.MainButton.setText("Scan QR code");
     WebApp.MainButton.show();
-  }, []);
 
-  const loadStorageKeys = useCallback(() => {
     WebApp.CloudStorage.getKeys((error: string | null, keys?: string[]) => {
       if (error) {
         WebApp.showAlert('Failed to load items');
@@ -37,10 +35,6 @@ const App: React.FC = () => {
       setCloudStorageKeys(keys);
     });
   }, []);
-  
-  useEffect(() => {
-    loadStorageKeys()
-  }, [loadStorageKeys]);
 
   useEffect(() => {
     const values: { [key: string]: string } = {};
@@ -66,7 +60,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const enrichedValues = cloudStorageKeys.map((key) => {
       const value = cloudStorageValues[key];
-      return { [key]: { type: detectCodeType(value), value } };
+      return { [key]: { type: 'url', value } };
     });
     setEnrichedValues(enrichedValues);
   }, [cloudStorageKeys, cloudStorageValues]);
@@ -100,8 +94,7 @@ const App: React.FC = () => {
 
     WebApp.closeScanQrPopup();   
 
-    loadStorageKeys();
-  }, [lastCode, loadStorageKeys]);
+  }, [lastCode]);
 
   useEffect(() => {
     WebApp.onEvent('qrTextReceived', processQRCode);
