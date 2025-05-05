@@ -23,44 +23,35 @@ const App: React.FC = () => {
     hapticImpact();
 
     try {
-      // Truncate and format the message for better readability
-      const displayText = `Confirmar processamento do QR Code?\n${data.data.substring(0, 100)}${data.data.length > 100 ? '...' : ''}`;
-      
-      WebApp.showConfirm(displayText, (confirmed) => {
-        if (confirmed) {
-          // Close QR popup first to avoid UI issues
-          WebApp.closeScanQrPopup();
-          
-          // Then proceed with the API call
-          fetch(import.meta.env.VITE_HTTP_TRIGGER, {
-            method: 'POST',
-            body: JSON.stringify({ url: data.data }),
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            WebApp.showAlert('Cupom enfileirado com sucesso!');
-          })
-          .catch(error => {
-            console.error('API error:', error);
-            WebApp.showAlert(`Erro: ${error.message || 'Falha na requisição'}`);
-          });
-        } else {
-          WebApp.closeScanQrPopup();
-        }
-      });
+        // Enviar o link como mensagem no Telegram
+        WebApp.sendData(data.data);
+        
+        // Then proceed with the API call
+        fetch(import.meta.env.VITE_HTTP_TRIGGER, {
+          method: 'POST',
+          body: JSON.stringify({ url: data.data }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          WebApp.showAlert('Cupom enfileirado com sucesso!');
+        })
+        .catch(error => {
+          console.error('API error:', error);
+          WebApp.showAlert(`Erro: ${error.message || 'Falha na requisição'}`);
+        });
+
     } catch (error) {
-      console.error('showConfirm error:', error);
-      WebApp.showAlert('Não foi possível mostrar a confirmação');
+      console.error('request error:', error);
+      WebApp.showAlert('Não foi possível realizar a requisição. Tente novamente mais tarde.');
+    }
+    finally {
       WebApp.closeScanQrPopup();
     }
-    
-    // Do not close popup here, wait for user response
-    // WebApp.closeScanQrPopup(); - Moved inside the confirm callback
   }, [lastCode]);
 
   const hapticImpact = () => {
