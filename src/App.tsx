@@ -27,7 +27,7 @@ const App: React.FC = () => {
         if (confirmed) {
           await fetch(import.meta.env.VITE_HTTP_TRIGGER, {
             method: 'POST',
-            body: JSON.stringify({ name: data.data }),
+            body: JSON.stringify({ url: data.data }),
             headers: {
             'Content-Type': 'application/json'
             }
