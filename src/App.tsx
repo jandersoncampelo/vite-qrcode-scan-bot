@@ -22,23 +22,45 @@ const App: React.FC = () => {
 
     hapticImpact();
 
-    WebApp.showConfirm(data.data, 
-      async (confirmed) => {
+    try {
+      // Truncate and format the message for better readability
+      const displayText = `Confirmar processamento do QR Code?\n${data.data.substring(0, 100)}${data.data.length > 100 ? '...' : ''}`;
+      
+      WebApp.showConfirm(displayText, (confirmed) => {
         if (confirmed) {
-          await fetch(import.meta.env.VITE_HTTP_TRIGGER, {
+          // Close QR popup first to avoid UI issues
+          WebApp.closeScanQrPopup();
+          
+          // Then proceed with the API call
+          fetch(import.meta.env.VITE_HTTP_TRIGGER, {
             method: 'POST',
             body: JSON.stringify({ url: data.data }),
             headers: {
-            'Content-Type': 'application/json'
+              'Content-Type': 'application/json'
             }
-        })
-        .catch((error) => { WebApp.showAlert('Error: ' + error); })
-        .then(() => {WebApp.showAlert('Cupom enfileirado com sucesso!'); });
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            WebApp.showAlert('Cupom enfileirado com sucesso!');
+          })
+          .catch(error => {
+            console.error('API error:', error);
+            WebApp.showAlert(`Erro: ${error.message || 'Falha na requisição'}`);
+          });
+        } else {
+          WebApp.closeScanQrPopup();
         }
-      }
-    );
-
-    WebApp.closeScanQrPopup();
+      });
+    } catch (error) {
+      console.error('showConfirm error:', error);
+      WebApp.showAlert('Não foi possível mostrar a confirmação');
+      WebApp.closeScanQrPopup();
+    }
+    
+    // Do not close popup here, wait for user response
+    // WebApp.closeScanQrPopup(); - Moved inside the confirm callback
   }, [lastCode]);
 
   const hapticImpact = () => {
